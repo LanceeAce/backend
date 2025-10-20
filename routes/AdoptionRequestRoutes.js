@@ -3,16 +3,43 @@ const router = express.Router();
 const AdoptionRequest = require("../models/AdoptionRequest");
 const Pet = require("../models/Pets");
 const AdoptedHistory = require("../models/AdoptedHistory");
-const User = require("../models/User"); 
+const User = require("../models/User");
+
 
 router.post("/", async (req, res) => {
   try {
-    const { petId, petName, petImage, firstName, lastName, email, ownPets, reason } = req.body;
+    const {
+      petId,
+      petName,
+      petImage,
+      firstName,
+      lastName,
+      email,
+      contact,
+      gender,
+      residence,
+      ownPets,
+      reason,
+    } = req.body;
 
-    if (!petId || !petName || !petImage || !firstName || !lastName || !email || !ownPets || !reason) {
+    
+    if (
+      !petId ||
+      !petName ||
+      !petImage ||
+      !firstName ||
+      !lastName ||
+      !email ||
+      !contact ||
+      !gender ||
+      !residence ||
+      !ownPets ||
+      !reason
+    ) {
       return res.status(400).json({ msg: "All fields are required" });
     }
 
+  
     const newRequest = new AdoptionRequest({
       petId,
       petName,
@@ -20,12 +47,14 @@ router.post("/", async (req, res) => {
       firstName,
       lastName,
       email,
+      contact,
+      gender,
+      residence,
       ownPets,
-      reason
+      reason,
     });
 
     await newRequest.save();
-
     res.status(201).json({ msg: "Adoption request submitted", request: newRequest });
   } catch (err) {
     console.error(err);
@@ -53,27 +82,32 @@ router.patch("/:id", async (req, res) => {
     const request = await AdoptionRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ msg: "Request not found" });
 
-  
-    request.status = status;
-    await request.save();
-
-    if (status === "Approved") {
     
+    request.status = status;
+    await request.save({ validateBeforeSave: false }); 
+
+    
+    if (status === "Approved") {
       const user = await User.findOne({ email: request.email });
       if (!user) return res.status(404).json({ msg: "User not found for adoption request" });
 
-      await AdoptedHistory.create({
-        petId: request.petId,
-        petName: request.petName,
-        petImage: request.petImage,
-        adopterId: user._id, 
-        adopterName: `${request.firstName} ${request.lastName}`,
-        adopterEmail: request.email,
-        reason: request.reason,
-        adoptedAt: new Date(),
-      });
+    await AdoptedHistory.create({
+  petId: request.petId,
+  petName: request.petName,
+  petImage: request.petImage,
+  adopterId: user._id,
+  adopterName: `${request.firstName} ${request.lastName}`,
+  adopterEmail: request.email,
+  contactNumber: request.contact,    
+  gender: request.gender,            
+  typeOfResidence: request.residence,  
+  reason: request.reason,
+  adoptedAt: new Date(),
+});
 
- 
+
+
+     
       await Pet.findByIdAndDelete(request.petId);
 
    
