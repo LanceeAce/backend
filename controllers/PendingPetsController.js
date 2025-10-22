@@ -22,6 +22,8 @@ const acceptPet = async (req, res) => {
       name: pet.name,
       type: pet.type,
       image: pet.image,
+      gender: pet.gender,
+      age: pet.age,
     });
 
     await approvedPet.save();

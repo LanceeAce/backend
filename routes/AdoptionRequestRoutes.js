@@ -5,7 +5,7 @@ const Pet = require("../models/Pets");
 const AdoptedHistory = require("../models/AdoptedHistory");
 const User = require("../models/User");
 
-
+// ✅ POST new adoption request
 router.post("/", async (req, res) => {
   try {
     const {
@@ -15,14 +15,14 @@ router.post("/", async (req, res) => {
       firstName,
       lastName,
       email,
-      contact,
+      contactNumber,
       gender,
-      residence,
+      typeOfResidence,
       ownPets,
       reason,
     } = req.body;
 
-    
+    // ✅ Validation check
     if (
       !petId ||
       !petName ||
@@ -30,16 +30,16 @@ router.post("/", async (req, res) => {
       !firstName ||
       !lastName ||
       !email ||
-      !contact ||
+      !contactNumber ||
       !gender ||
-      !residence ||
+      !typeOfResidence ||
       !ownPets ||
       !reason
     ) {
       return res.status(400).json({ msg: "All fields are required" });
     }
 
-  
+    // ✅ Create new adoption request
     const newRequest = new AdoptionRequest({
       petId,
       petName,
@@ -47,9 +47,9 @@ router.post("/", async (req, res) => {
       firstName,
       lastName,
       email,
-      contact,
+      contactNumber,
       gender,
-      residence,
+      typeOfResidence,
       ownPets,
       reason,
     });
@@ -75,42 +75,39 @@ router.get("/", async (req, res) => {
   }
 });
 
-
+// ✅ PATCH (update request status)
 router.patch("/:id", async (req, res) => {
   try {
     const { status } = req.body;
     const request = await AdoptionRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ msg: "Request not found" });
 
-    
     request.status = status;
-    await request.save({ validateBeforeSave: false }); 
+    await request.save({ validateBeforeSave: false });
 
-    
+    // ✅ If approved, move record to AdoptedHistory
     if (status === "Approved") {
       const user = await User.findOne({ email: request.email });
       if (!user) return res.status(404).json({ msg: "User not found for adoption request" });
 
-    await AdoptedHistory.create({
-  petId: request.petId,
-  petName: request.petName,
-  petImage: request.petImage,
-  adopterId: user._id,
-  adopterName: `${request.firstName} ${request.lastName}`,
-  adopterEmail: request.email,
-  contactNumber: request.contact,    
-  gender: request.gender,            
-  typeOfResidence: request.residence,  
-  reason: request.reason,
-  adoptedAt: new Date(),
-});
+      await AdoptedHistory.create({
+        petId: request.petId,
+        petName: request.petName,
+        petImage: request.petImage,
+        adopterId: user._id,
+        adopterName: `${request.firstName} ${request.lastName}`,
+        adopterEmail: request.email,
+        contactNumber: request.contactNumber,     // ✅ updated
+        gender: request.gender,                   // ✅ updated
+        typeOfResidence: request.typeOfResidence, // ✅ updated
+        reason: request.reason,
+        adoptedAt: new Date(),
+      });
 
-
-
-     
+      // ✅ Remove adopted pet from pets collection
       await Pet.findByIdAndDelete(request.petId);
 
-   
+      // ✅ Reject all pending requests for same pet
       await AdoptionRequest.updateMany(
         { petId: request.petId, _id: { $ne: request._id }, status: "Pending" },
         { status: "Rejected" }

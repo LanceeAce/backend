@@ -5,7 +5,6 @@ const { getPendingPets, acceptPet, rejectPet } = require("../controllers/Pending
 
 const router = express.Router();
 
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -16,15 +15,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { name, type } = req.body;
+    const { name, type, gender, age } = req.body; // ✅ include gender and age
     const image = req.file ? `/uploads/${req.file.filename}` : null;
-    if (!name || !type || !image) return res.status(400).json({ msg: "All fields are required" });
 
-    const newPendingPet = new PendingPet({ name, type, image });
+    if (!name || !type || !gender || !age || !image)
+      return res.status(400).json({ msg: "All fields are required" });
+
+    const newPendingPet = new PendingPet({ name, type, gender, age, image }); // ✅ add here
     await newPendingPet.save();
+
     res.status(201).json({ msg: "Pet submitted successfully", pet: newPendingPet });
   } catch (err) {
     console.error(err);
@@ -32,13 +33,8 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-
 router.get("/", getPendingPets);
-
-
 router.post("/accept/:id", acceptPet);
-
-
 router.delete("/reject/:id", rejectPet);
 
 module.exports = router;

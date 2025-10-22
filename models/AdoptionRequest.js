@@ -10,11 +10,11 @@ const AdoptionRequestSchema = new mongoose.Schema(
     lastName: { type: String, required: true },
 
     gender: { type: String, enum: ["Male", "Female"], required: true }, 
-    residence: { type: String, enum: ["Apartment", "House"], required: true }, 
+    typeOfResidence: { type: String, enum: ["Apartment", "House"], required: true }, 
 
     email: { type: String, required: true },
 
-    contact: {
+    contactNumber: {
       type: String,
       required: true,
       validate: {
